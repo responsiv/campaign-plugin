@@ -161,7 +161,7 @@ Renders a repeating section with other fields inside.
         <p>{textarea name="content" label="Content"}Content{/textarea}</p>
     {/repeater}
 
-For more details on syntax fields, see the [Parser section](octobercms.com/docs/services/parser) of the October documentation.
+For more details on syntax fields, see the [Parser section](https://octobercms.com/docs/services/parser) of the October documentation.
 
 ## Creating new recipient groups
 
