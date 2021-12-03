@@ -52,12 +52,14 @@ This plugin relies on the system schedule process for running its automated task
 
 Some hosting providers will not allow direct access to the cron table, instead they will allow you to call a HTTP endpoint every few minutes. To solve the problem, you can create a custom plugin and call the command using the Artisan Facade. Create a routes.php file in the root folder of the plugin with the route:
 
-    use Route;
-    use Artisan;
+```php
+use Route;
+use Artisan;
 
-    Route::get('/campaign_run', function () {
-        return Artisan::call('campaign:run');
-    });
+Route::get('/campaign_run', function () {
+    return Artisan::call('campaign:run');
+});
+```
 
 - [More information on routing in October CMS](https://octobercms.com/docs/services/router#basic-routing)
 
@@ -70,55 +72,59 @@ Use the `campaignSignup` component to display a subscription form on a page. The
 
 Here is some sample markup:
 
-    title = "My page"
-    url = "/mypage"
+```twig
+title = "My page"
+url = "/mypage"
 
-    [campaignSignup]
-    list = "followers"
-    confirm = 0
-    ==
-    <div id="container">
-        <form
-            data-request="campaignSignup::onSignup"
-            data-request-update="'campaignSignup::result': '#container'">
+[campaignSignup]
+list = "followers"
+confirm = 0
+==
+<div id="container">
+    <form
+        data-request="campaignSignup::onSignup"
+        data-request-update="'campaignSignup::result': '#container'">
 
-            <!-- Optional first name -->
-            <input name="first_name" type="text" placeholder="First name" />
+        <!-- Optional first name -->
+        <input name="first_name" type="text" placeholder="First name" />
 
-            <!-- Optional last name -->
-            <input name="last_name" type="text"  placeholder="Last name" />
+        <!-- Optional last name -->
+        <input name="last_name" type="text"  placeholder="Last name" />
 
-            <!-- Required email address -->
-            <input name="email" type="text"  placeholder="john.smith@example.com" />
+        <!-- Required email address -->
+        <input name="email" type="text"  placeholder="john.smith@example.com" />
 
-            <button class="btn btn-default" type="submit">Subscribe</button>
+        <button class="btn btn-default" type="submit">Subscribe</button>
 
-        </form>
-    </div>
+    </form>
+</div>
+```
 
 ## Campaign Templates
 
 Campaign Templates are managed in the CMS area and should be designed by a developer. Each template should use the `campaignTemplate` CMS Component and like any CMS page, they can support using other components for dynamically generating content.
 
-    title = "Default template"
-    url = "/campaign/message/:code"
-    description = "Campaign with basic fields"
+```twig
+title = "Default template"
+url = "/campaign/message/:code"
+description = "Campaign with basic fields"
 
-    [campaignTemplate]
-    ==
-    <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
-       "http://www.w3.org/TR/html4/loose.dtd">
+[campaignTemplate]
+==
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+    "http://www.w3.org/TR/html4/loose.dtd">
 
-        <html lang="en">
-        <head>
-            <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-            <title>Newsletter</title>
-        </head>
+    <html lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <title>Newsletter</title>
+    </head>
 
-        <body>
-            {richeditor name="body" size="huge"}{/richeditor}
-        </body>
-    </html>
+    <body>
+        {richeditor name="body" size="huge"}{/richeditor}
+    </body>
+</html>
+```
 
 There is a template build syntax, this lets you add form fields inside the template where the content can be added via the Campaign creation process. These tags are supported:
 
@@ -161,7 +167,7 @@ Renders a repeating section with other fields inside.
         <p>{textarea name="content" label="Content"}Content{/textarea}</p>
     {/repeater}
 
-For more details on syntax fields, see the [Parser section](https://octobercms.com/docs/services/parser) of the October documentation.
+For more details on syntax fields, see the [Parser section](octobercms.com/docs/services/parser) of the October documentation.
 
 ## Creating new recipient groups
 
@@ -172,88 +178,183 @@ Plugins can extend the Campaign plugin with new recipient groups. These are like
 
 The next example shows an event handler registration code for a plugin. The plugin registers two recipient groups. As you can see, the plugin uses the Customer class to handle the events. That's a recommended approach.
 
-    public function boot()
-    {
-        Event::listen('responsiv.campaign.listRecipientGroups', function() {
-            return [
-                'my-plugin-all-customers' => 'All customers',
-                'my-plugin-paid-customers' => 'Customers with paid orders',
-            ];
-        });
+```php
+public function boot()
+{
+    Event::listen('responsiv.campaign.listRecipientGroups', function() {
+        return [
+            'my-plugin-all-customers' => 'All customers',
+            'my-plugin-paid-customers' => 'Customers with paid orders',
+        ];
+    });
 
-        Event::listen('responsiv.campaign.getRecipientsData', function($type) {
-            if ($type == 'my-plugin-all-customers')
-                return Customer::getAllCustomers();
+    Event::listen('responsiv.campaign.getRecipientsData', function($type) {
+        if ($type == 'my-plugin-all-customers')
+            return Customer::getAllCustomers();
 
-            if ($type == 'my-plugin-paid-customers')
-                return Customer::getPaidCustomers();
-        });
-    }
+        if ($type == 'my-plugin-paid-customers')
+            return Customer::getPaidCustomers();
+    });
+}
+```
 
 ##### Registering new recipient groups
 
 New recipient groups can be registered with the `responsiv.campaign.listRecipientGroups` event handler. The handler should return an associative array with the type codes in indexes and the names in values. It is highly recommended to use the plugin name for the type code, to avoid conflicts with other plugins. For example:
 
-    [
-        'my-plugin-recipient-type' => 'My plugin recipient type',
-    ]
+```php
+[
+    'my-plugin-recipient-type' => 'My plugin recipient type',
+]
+```
 
 ##### Returning information about an recipient collection
 
 Plugins should provide detailed information about the supported recipient types with the `responsiv.campaign.getRecipientsData` event handlers. The handler gets a single parameter - the recipient type code (one of the codes you registered with the `responsiv.campaign.listRecipientGroups` handler). The handler code must check whether the requested item type code belongs to the plugin. The handler should return an associative array in the following format:
 
-    Array (
-        [recipients] => Array (
-            'greatguy@domain.tld' => ['first_name' => 'Some', 'last_name' => 'Person'],
-            'coolgal@domain.tld' => ['first_name' => 'Another', 'last_name' => 'Person'],
-            [...]
-        )
-    )
+```php
+[
+    'recipients' => [
+        'greatguy@domain.tld' => ['first_name' => 'Some', 'last_name' => 'Person'],
+        'coolgal@domain.tld' => ['first_name' => 'Another', 'last_name' => 'Person'],
+        // ...
+    ]
+]
+```
 
 ##### Extending the unsubscribe event
 
 You may hook the `responsiv.campaign.beforeUnsubscribe` event if you want to use your own logic called when a user unsubscribes. This event can override the default behavior by returning a response, which is then passed to the user's browser.
 
-    Event::listen('responsiv.campaign.beforeUnsubscribe', function(
-        $component,
-        $subscriber,
-        $campaign
-    ) {
-        // ...
-    });
+```php
+Event::listen('responsiv.campaign.beforeUnsubscribe', function(
+    $component,
+    $subscriber,
+    $campaign
+) {
+    // ...
+});
+```
 
 ## Capturing Extra Data / Meta Data
 
 To capture meta data make sure the `metaData` property is enabled in the `Signup` component.
 
-    [campaignSignup]
-    metaData = 1
+```ini
+[campaignSignup]
+metaData = 1
+```
 
 Then simply customize the component markup and pass custom data to `meta[]` HTML input array.
 
-    <form data-request="onSignup">
-        <!-- ... -->
+```html
+<form data-request="onSignup">
+    <!-- ... -->
 
-        <label>
-            <input type="radio" name="meta[interest]" value="Sport" />
-            Sport
-        </label>
-        <label>
-            <input type="radio" name="meta[interest]" value="Games" />
-            Games
-        </label>
-        <label>
-            <input type="radio" name="meta[interest]" value="Dancing" />
-            Dancing
-        </label>
+    <label>
+        <input type="radio" name="meta[interest]" value="Sport" />
+        Sport
+    </label>
+    <label>
+        <input type="radio" name="meta[interest]" value="Games" />
+        Games
+    </label>
+    <label>
+        <input type="radio" name="meta[interest]" value="Dancing" />
+        Dancing
+    </label>
 
-        <label>
-            <input type="checkbox" name="meta[tell_me_more]" value="Yes" />
-            Tell me more
-        </label>
+    <label>
+        <input type="checkbox" name="meta[tell_me_more]" value="Yes" />
+        Tell me more
+    </label>
 
-        <!-- ... -->
-        <button type="submit">Subscribe</button>
-    </form>
+    <!-- ... -->
+    <button type="submit">Subscribe</button>
+</form>
+```
 
 The captured meta data will then be shown next to each subscriber in the back-end. Note: The column is invisible in the list view by default.
+
+## Extend tags available in the content editor
+
+Plugins may extend the list of available tags that can be used in the editor, by registering the tag with the TagManager.
+Create a function called `registerMailCampaignTags()` in your Plugin.php and return an array of tags to use in the content editor.
+
+The following attributes are available:
+
+- `tag`: The name of the tag, used in the content editor like {tag_name}.
+- `value`: The value for this tag. Must be a string, but may be a closure that returns a string. The closure gets a parameter `$tagData` which includes the subscriber and message object and may be extended (see below).
+- `preview`: The value that is used for generating the message preview. Must be a string, but may be a closure, just like `value`.
+- `description`: A description for the tag, which is display as a tooltip on the tag legend in the content editor.
+
+Example:
+
+```php
+public function registerMailCampaignTags()
+{
+    return [
+        'occupation' => [
+            'value' => function ($tagData) {
+                return $tagData->subscriber->meta_data['occupation']
+            },
+            'preview' => 'Web Developer',
+            'description' => 'The subscribers occupation.',
+        ],
+        'city' => [
+            'value' => function ($tagData) {
+                return $tagData->subscriber->meta_data['city']
+            },
+            'preview' => 'Milan',
+            'description' => 'The city where the subscriber lives.',
+        ],
+    ];
+}
+```
+
+If you need to fetch the same data in the closures, you may also listen to the `responsiv.campaign.extendTagdata` event and extend the available tag data. This helps you keep the code a bit cleaner, if you have many different tags that access the same data.
+
+When the event is fired, it provides a reference to the `$tagData` to which you may add your data objects. Dont forget the ampersand (&) in front of the $tagData parameter to get it by reference and add your data to it.
+
+```php
+public function boot()
+{
+    Event::listen('responsiv.campaign.extendTagdata', function(&$tagData) {
+        if ($tagData->subscriber && $tagData->subscriber->email) {
+            $user = User::getByEmail($tagData->subscriber->email);
+            if ($user) {
+                $tagData->ordersQuery = $user->orders();
+                $tagData->orders = $user->orders;
+            }
+        }
+    });
+}
+
+public function registerMailCampaignTags()
+{
+    return [
+        'latest_order_total' => [
+            'value' => function ($tagData) {
+                if (!$tagData->ordersQuery) {
+                    return null;
+                }
+                return $tagData->ordersQuery->lastByOrderingDate()->presenter()->renderMoneyTotal();
+            },
+            'preview' => '[ Total ]',
+            'description' => 'The total from the last order',
+        ],
+        'latest_products_ordered' => [
+            'value' => function ($tagData) {
+                if (!$tagData->orders) {
+                    return null;
+                }
+                return count($tagData->orders) > 0
+                    ? $tagData->ordersQuery->lastByOrderingDate()->presenter()->renderForCampaign()
+                    : $tagData->orders->presenter()->renderEmptyOrderListForCampaign();
+            },
+            'preview' => '[ Products ]',
+            'description' => 'List of products form the last order',
+        ],
+    ];
+}
+```
